@@ -19,7 +19,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: yaseen1407
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
@@ -27,6 +27,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/oan-ai-api:latest
+          tags: yaseen1407/oan-ai-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
