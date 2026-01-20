@@ -50,3 +50,6 @@ boto3
 
 # Mapbox Geocoding
 geopy
+
+
+language_data
