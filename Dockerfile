@@ -1,32 +1,26 @@
-# Use Python 3.10 slim image
-FROM python:3.10-slim
-
-# Set working directory
-WORKDIR /app
+# Use Azure Functions Python 3.10 image
+FROM mcr.microsoft.com/azure-functions/python:4-python3.10
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PORT=8000
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=python \
+    PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /home/site/wwwroot
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy all application files
 COPY . .
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
-
-# Expose port 8000 (Azure will map to 80)
-EXPOSE 8000
-
-# Run with gunicorn for production
-CMD ["gunicorn", "main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Expose port 80
+EXPOSE 80
