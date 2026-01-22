@@ -32,8 +32,8 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # RUN chown -R app:app /app
 # USER app
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose FastAPI port (Azure Functions expects port 80 or WEBSITES_PORT)
+EXPOSE 80
 
 # Start supervisor to manage both FastAPI and Celery
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
