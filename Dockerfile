@@ -1,25 +1,26 @@
-# Use Python 3.10 slim image
-FROM python:3.10-slim
+# Use Azure Functions Python 3.10 image
+FROM mcr.microsoft.com/azure-functions/python:4-python3.10
+
+# Set environment variables for Azure Functions
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=python \
+    PYTHONUNBUFFERED=1
 
 # Set working directory
-WORKDIR /app
+WORKDIR /home/site/wwwroot
 
-# Install system dependencies (minimal)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Expose port 80 for Azure Functions
+# Expose port 80
 EXPOSE 80
-
-# Run the application with Azure Functions optimized settings
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--timeout-keep-alive", "75", "--log-level", "info"]

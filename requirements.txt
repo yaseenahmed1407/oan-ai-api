@@ -3,6 +3,7 @@ fastapi
 uvicorn[standard]
 gunicorn
 asgiref
+azure-functions
 
 # Core Dependencies
 python-dotenv

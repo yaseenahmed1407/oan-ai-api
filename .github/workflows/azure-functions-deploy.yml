@@ -1,4 +1,4 @@
-name: Deploy to Azure Functions
+name: Deploy OAN AI API to Azure Functions
 
 on:
   push:
@@ -9,6 +9,7 @@ env:
   AZURE_FUNCTIONAPP_NAME: 'oan-ai-function'
   ACR_LOGIN_SERVER: 'oanmockserver.azurecr.io'
   IMAGE_NAME: 'oan-ai-api'
+  AZURE_RESOURCE_GROUP: 'OAN-Org'
 
 jobs:
   build-and-deploy:
@@ -49,6 +50,17 @@ jobs:
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           images: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Configure Function App Logging
+        run: |
+          az functionapp config appsettings set \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings FUNCTIONS_WORKER_RUNTIME=python AzureWebJobsFeatureFlags=EnableWorkerIndexing
+          
+          az functionapp restart \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
 
       - name: Logout from Azure
         run: az logout
