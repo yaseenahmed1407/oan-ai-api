@@ -4,7 +4,6 @@ uvicorn[standard]
 gunicorn
 asgiref
 azure-functions
-azure-functions
 
 # Core Dependencies
 python-dotenv
