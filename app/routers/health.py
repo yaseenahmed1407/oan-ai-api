@@ -9,6 +9,11 @@ router = APIRouter(prefix="/health", tags=["health"])
 # Track when the application started
 START_TIME = time.time()
 
+@router.get("", status_code=status.HTTP_200_OK)
+async def health_root():
+    """Root health check endpoint for Azure Functions startup probe"""
+    return {"status": "ok", "message": "Service is running"}
+
 async def check_cache_connection() -> Dict[str, Any]:
     """Check Redis cache connection"""
     try:
