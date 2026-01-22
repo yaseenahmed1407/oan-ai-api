@@ -135,6 +135,7 @@ celerybeat.pid
 # Environments
 .env
 .env.azure
+.env.azure.complete
 .venv
 env/
 venv/

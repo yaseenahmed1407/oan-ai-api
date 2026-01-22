@@ -4,7 +4,6 @@ import os
 import re
 from typing import List, Dict
 import logging
-import boto3
 from dotenv import load_dotenv
 import base64
 import tiktoken
@@ -13,11 +12,22 @@ from datetime import datetime
 import simplejson as json
 from jinja2 import Environment, FileSystemLoader
 
+# Optional imports for AWS functionality
+try:
+    import boto3
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    boto3 = None
+
 load_dotenv()
 
 
 def get_s3_client():
     """Get S3 client."""
+    if not BOTO3_AVAILABLE:
+        raise ImportError("boto3 is not installed. Install it with: pip install boto3")
+    
     return boto3.client(
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
