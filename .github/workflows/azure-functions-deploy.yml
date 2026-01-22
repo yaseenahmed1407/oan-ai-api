@@ -1,4 +1,4 @@
-name: Deploy OAN AI API to Azure Functions
+name: Deploy OAN AI API to Azure Web App
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: 'oan-ai-function'
+  AZURE_WEBAPP_NAME: 'oan-ai-function'
   ACR_LOGIN_SERVER: 'oanmockserver.azurecr.io'
   IMAGE_NAME: 'oan-ai-api'
   AZURE_RESOURCE_GROUP: 'OAN-Org'
@@ -45,21 +45,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Functions
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           images: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Configure Function App Logging
+      - name: Configure Web App Settings
         run: |
-          az functionapp config appsettings set \
-            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --settings FUNCTIONS_WORKER_RUNTIME=python AzureWebJobsFeatureFlags=EnableWorkerIndexing
+            --settings WEBSITES_PORT=8000 WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
           
-          az functionapp restart \
-            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+          az webapp restart \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
 
       - name: Logout from Azure
