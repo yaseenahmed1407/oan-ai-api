@@ -42,6 +42,7 @@ cryptography
 
 # Language and Localization
 langcodes
+language_data
 
 # Template Engine
 jinja2
@@ -51,6 +52,3 @@ boto3
 
 # Mapbox Geocoding
 geopy
-
-
-language_data
