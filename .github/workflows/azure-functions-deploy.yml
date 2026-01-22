@@ -1,59 +1,53 @@
-name: Deploy OAN AI API to Azure Container App
+name: Deploy OAN AI API to Azure Functions
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 env:
-  AZURE_CONTAINER_APP_NAME: 'oan-ai-function'
-  ACR_LOGIN_SERVER: 'oanmockserver.azurecr.io'
+  AZURE_FUNCTIONAPP_NAME: 'oan-ai-api'
+  REGISTRY_LOGIN_SERVER: 'oanmockserver.azurecr.io'
   IMAGE_NAME: 'oan-ai-api'
-  AZURE_RESOURCE_GROUP: 'OAN-Org'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Log in to Azure Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+    - name: Log in to Azure Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ env.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+          ${{ env.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+        cache-to: type=inline
 
-      - name: Build and push Docker image to ACR
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Deploy to Azure Functions
+      uses: Azure/functions-container-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        image: ${{ env.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Deploy to Azure Container App
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az containerapp update \
-              --name ${{ env.AZURE_CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Logout from Azure
-        run: az logout
-        if: always()
+    - name: Azure Logout
+      run: az logout
+      if: always()
