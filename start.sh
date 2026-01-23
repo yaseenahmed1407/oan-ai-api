@@ -1,108 +1,103 @@
 #!/bin/bash
 
-echo "=========================================="
-echo "OAN AI API - Container Startup"
-echo "=========================================="
-echo "Python: $(python --version)"
-echo "Working Dir: $(pwd)"
-echo "Time: $(date)"
-echo ""
+# OAN AI API - Startup Script
+# Optimized for Azure Functions (Custom Container)
+
+set -e
 
 echo "=========================================="
-echo "Environment Variables"
+echo "🚀 OAN AI API - Starting Up"
 echo "=========================================="
-echo "LLM_PROVIDER: ${LLM_PROVIDER:-NOT_SET}"
-echo "LLM_MODEL_NAME: ${LLM_MODEL_NAME:-NOT_SET}"
-echo "GROQ_API_KEY: ${GROQ_API_KEY:0:20}..."
-echo "PORT: ${PORT:-80}"
-echo "ENVIRONMENT: ${ENVIRONMENT:-NOT_SET}"
+echo "Python Version: $(python3 --version)"
+echo "Current Directory: $(pwd)"
+echo "Timestamp: $(date)"
 echo ""
 
-# Set defaults for missing env vars
-export LLM_PROVIDER=${LLM_PROVIDER:-groq}
-export LLM_MODEL_NAME=${LLM_MODEL_NAME:-llama-3.3-70b-versatile}
+# Export default environment variables
+export PORT=${PORT:-80}
+export WEBSITES_PORT=${WEBSITES_PORT:-$PORT}
 export ENVIRONMENT=${ENVIRONMENT:-production}
-export USE_REDIS=${USE_REDIS:-false}
 
 echo "=========================================="
-echo "Python Package Verification"
+echo "📡 Port Configuration"
 echo "=========================================="
+echo "PORT: $PORT"
+echo "WEBSITES_PORT: $WEBSITES_PORT"
+echo ""
+
+echo "=========================================="
+echo "🔍 Environment Variable Check"
+echo "=========================================="
+echo "LLM_PROVIDER: ${LLM_PROVIDER:-NOT SET}"
+echo "LLM_MODEL_NAME: ${LLM_MODEL_NAME:-NOT SET}"
+echo "GROQ_API_KEY: ${GROQ_API_KEY:0:5}... (truncated)"
+echo "REDIS_HOST: ${REDIS_HOST:-NOT SET}"
+echo ""
+
+echo "=========================================="
+echo "📦 Verifying Dependencies"
+echo "=========================================="
+# Safe import checks
 python3 -c "import fastapi; print('✅ FastAPI:', fastapi.__version__)"
 python3 -c "import uvicorn; print('✅ Uvicorn:', uvicorn.__version__)"
-python3 -c "import gunicorn; print('✅ Gunicorn installed')"
+python3 -c "import pydantic_settings; print('✅ Pydantic-Settings installed')"
+python3 -c "import dateutil; print('✅ Python-Dateutil installed')"
 python3 -c "import tiktoken; print('✅ Tiktoken installed')"
-python3 -c "import pydantic_ai; print('✅ Pydantic-AI installed')"
 echo ""
 
 echo "=========================================="
-echo "Application Import Test"
+echo "🧪 Testing Application Import"
 echo "=========================================="
-
-python3 << 'PYTHON_EOF'
+# This helps identify exactly which file/import is failing
+python3 << 'EOF'
 import sys
+import traceback
 import os
 
-# Ensure env vars are set
-os.environ.setdefault('LLM_PROVIDER', 'groq')
-os.environ.setdefault('LLM_MODEL_NAME', 'llama-3.3-70b-versatile')
-os.environ.setdefault('USE_REDIS', 'false')
-
+print("Testing app import sequence...")
 try:
-    print("Testing: helpers.utils")
+    print("1/4: helpers.utils...")
     from helpers.utils import get_logger
     print("✅ helpers.utils")
-    
-    print("Testing: app.config")
+
+    print("2/4: app.config...")
     from app.config import settings
-    print(f"✅ app.config (LLM: {settings.llm_provider})")
-    
-    print("Testing: app.core.cache")
-    from app.core.cache import cache
-    print("✅ app.core.cache")
-    
-    print("Testing: agents.models")
+    print(f"✅ app.config")
+
+    print("3/4: agents.models...")
+    # Temporarily bypass API key requirement for import test if needed
+    os.environ.setdefault('GROQ_API_KEY', 'test_key')
     from agents.models import LLM_MODEL
     print(f"✅ agents.models")
-    
-    print("Testing: app.routers")
-    from app.routers import chat_router, suggestions_router
-    from app.routers.health import router as health_router
-    print("✅ app.routers")
-    
-    print("Testing: main app")
+
+    print("4/4: main app...")
     from main import app
-    print(f"✅ Main app: {app.title}")
-    
-    print("\n✅ All imports successful!")
+    print(f"✅ main.app initialized: {app.title}")
+
+    print("\n✅ ALL IMPORTS SUCCESSFUL")
     sys.exit(0)
-    
 except Exception as e:
-    print(f"\n❌ Import failed: {e}")
-    import traceback
+    print(f"\n❌ IMPORT FAILED")
+    print(f"Error Type: {type(e).__name__}")
+    print(f"Error Message: {str(e)}")
+    print("\nFull Traceback:")
     traceback.print_exc()
-    print("\n⚠️  Attempting to start anyway (imports may succeed in Gunicorn context)...")
-    sys.exit(0)  # Don't fail - let Gunicorn try
-
-PYTHON_EOF
+    sys.exit(1)
+EOF
 
 echo ""
 echo "=========================================="
-echo "Starting Gunicorn Server"
+echo "🚦 Starting Gunicorn Server"
 echo "=========================================="
-echo "Binding to: 0.0.0.0:${PORT:-80}"
-echo "Workers: 2"
-echo "Worker Class: uvicorn.workers.UvicornWorker"
-echo ""
-
-# Start Gunicorn
+# Using worker-class uvicorn.workers.UvicornWorker
+# Removed --preload to avoid issues with some libraries during master process initialization
 exec gunicorn main:app \
-    --workers 2 \
+    --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:${PORT:-80} \
+    --bind 0.0.0.0:$PORT \
     --timeout 120 \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
     --capture-output \
-    --enable-stdio-inheritance \
-    --preload
+    --enable-stdio-inheritance

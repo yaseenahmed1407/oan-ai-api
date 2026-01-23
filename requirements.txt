@@ -4,12 +4,15 @@ uvicorn[standard]
 gunicorn
 asgiref
 azure-functions
+pydantic-settings
+pydantic[email]
 
 # Core Dependencies
 python-dotenv
 requests
 httpx
 tenacity
+python-dateutil
 
 # Data Handling
 pandas
