@@ -75,6 +75,10 @@ def create_app() -> FastAPI:
     app.include_router(tts_router, prefix=settings.api_prefix)
     app.include_router(health_router, prefix=settings.api_prefix)
     
+    @app.get("/")
+    async def root():
+        return {"status": "ok", "app": "MahaVistaar AI API"}
+    
     return app
 
 # Create the app instance

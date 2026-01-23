@@ -47,12 +47,6 @@ async def readiness():
     """
     cache_health = await check_cache_connection()
     
-    if cache_health["status"] != "healthy":
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"status": "not ready", "cache": cache_health}
-        )
-    
     return {"status": "ready", "cache": cache_health}
 
 @router.get("/", status_code=status.HTTP_200_OK)
@@ -76,11 +70,6 @@ async def health_check():
         }
     }
     
-    # If any critical dependency is unhealthy, return 503
-    if cache_health["status"] != "healthy":
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=health_status
-        )
+    return health_status
     
     return health_status 
