@@ -26,17 +26,16 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up MahaVistaar AI API...")
     
-    # Test cache connection (non-blocking)
-    try:
-        await cache.set("health_check", "ok", ttl=60)
-        test_value = await cache.get("health_check")
-        if test_value == "ok":
+    # Cache connection check moved to background to prevent startup blocking
+    async def check_cache():
+        try:
+            await cache.set("health_check", "ok", ttl=60)
             logger.info("✅ Cache connection successful")
-        else:
-            logger.warning("⚠️ Cache connection issue - values not persisting correctly")
-    except Exception as e:
-        logger.warning(f"⚠️ Cache connection failed (non-critical): {str(e)}")
-        logger.info("Application will continue without cache")
+        except Exception as e:
+            logger.warning(f"⚠️ Cache connection failed: {str(e)}")
+
+    import asyncio
+    asyncio.create_task(check_cache())
     
     logger.info("✅ Application startup complete")
     
