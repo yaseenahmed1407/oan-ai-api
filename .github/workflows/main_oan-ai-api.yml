@@ -51,11 +51,12 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🚀 Trigger Azure Function Deployment (Pull Flow)
-      uses: Azure/functions-action@v1
-      with:
-        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        image: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+    - name: 🚀 Update Azure Container App (Pull Flow)
+      run: |
+        az containerapp update \
+          --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+          --resource-group OAN-Org \
+          --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
     - name: 🧹 Logout from Azure
       run: az logout
