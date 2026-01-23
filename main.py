@@ -77,6 +77,7 @@ def create_app() -> FastAPI:
     
     @app.get("/")
     async def root():
+        logger.info("ROOT endpoint hit")
         return {"status": "ok", "app": "MahaVistaar AI API"}
     
     return app
