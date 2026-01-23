@@ -51,21 +51,11 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🚀 Deploy Container to Azure Functions
-      run: |
-        az functionapp config container set \
-          --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
-          --resource-group OAN-Org \
-          --docker-custom-image-name ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-          --docker-registry-server-url https://${{ env.ACR_LOGIN_SERVER }} \
-          --docker-registry-server-user ${{ env.ACR_USERNAME }} \
-          --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
-        
-        echo "✅ Container configuration updated"
-        
-        # Restart the function app to pull new image
-        az functionapp restart --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group OAN-Org
-        echo "✅ Function app restarted"
+    - name: 🚀 Trigger Azure Function Deployment (Pull Flow)
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        image: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
 
     - name: 🧹 Logout from Azure
       run: az logout
@@ -73,7 +63,5 @@ jobs:
 
     - name: ✅ Deployment Summary
       run: |
-        echo "🎉 Deployment completed successfully!"
-        echo "📦 Image: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        echo "🌐 Function App: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net"
-        echo "🏥 Health Check: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net/api/health"
+        echo "🎉 Image pushed to ACR: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest"
+        echo "🌐 Azure Function will pull and deploy the new image."
