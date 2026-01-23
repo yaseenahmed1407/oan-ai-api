@@ -11,7 +11,7 @@ env:
   ACR_LOGIN_SERVER: oanmockserver.azurecr.io
   ACR_USERNAME: oanmockserver
   IMAGE_NAME: oan-ai-api
-  AZURE_FUNCTIONAPP_NAME: oan-ai-api
+  AZURE_FUNCTIONAPP_NAME: oan-ai-function
 
 jobs:
   build-and-deploy:
